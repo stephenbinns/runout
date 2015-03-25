@@ -6,7 +6,6 @@ local Road = require 'road'
 local Color = require 'color'
 local Cars = require 'cars'
 
-
 function love.load()
   -- attach a debugger \o/
   if arg[#arg] == "-debug" then require("mobdebug").start() end
@@ -40,7 +39,7 @@ function love.load()
   playerZ       = (cameraHeight * cameraDepth)
   centrifugal   = 0.35                     -- centrifugal force multiplier when going around curves
   resolution    = height/480
-  Road.resetRoad()
+
 
   player = love.graphics.newImage('player.png')
   car1 = love.graphics.newImage('car1.png')
@@ -54,6 +53,8 @@ function love.load()
 
   cars      = {}  -- array of cars on the road
   totalCars = 200 -- total number of cars on the road
+  
+  Road.reset()
   Cars.reset(SPRITES.SCALE)
 end
 
@@ -94,7 +95,7 @@ function love.update(dt)
 
   for n = 1, table.getn(playerSegment.cars), 1 do
     car  = playerSegment.cars[n]
-    carW = scaledPlayerW--car.sprite:getWidth() * SPRITES.SCALE
+    carW = scaledPlayerW
     if (speed > car.speed) then
       if (Util.overlap(playerX, scaledPlayerW, car.offset, carW, 0.5)) then
         speed    = car.speed * (car.speed/speed)
@@ -218,11 +219,6 @@ function love.draw()
     (height/2) - (cameraDepth/playerZ * Util.interpolate(playerSegment.p1.camera.y, playerSegment.p2.camera.y, playerPercent) * height/2),
     steer,
     playerSegment.p2.world.y - playerSegment.p1.world.y)
-end
-
--- probably remove this for production version
-local function error_printer(msg, layer)
-  print((debug.traceback("Error: " .. tostring(msg), 1+(layer or 1)):gsub("\n[^\n]+$", "")))
 end
 
 function findSegment(z)
