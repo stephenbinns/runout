@@ -47,13 +47,15 @@ function love.load()
   car3 = love.graphics.newImage('car3.png')
   car4 = love.graphics.newImage('car4.png')
 
+  billboard = love.graphics.newImage('billboard.png')
+
   playerW = player:getWidth() 
   SPRITES.SCALE = 0.3 * (1/playerW)
   scaledPlayerW = player:getWidth() * SPRITES.SCALE
 
   cars      = {}  -- array of cars on the road
   totalCars = 200 -- total number of cars on the road
-  
+
   Road.reset()
   Cars.reset(SPRITES.SCALE)
 end
@@ -185,7 +187,7 @@ function love.draw()
     for i = 1, nsprites, 1 do
       sprite      = segment.sprites[i]
       spriteScale = segment.p1.screen.scale
-      spriteX     = segment.p1.screen.x + (spriteScale * sprite.offset * roadWidth * width/2)
+      spriteX     = segment.p1.screen.x + (spriteScale * sprite.offset * (roadWidth + 1500) * width/2)
       spriteY     = segment.p1.screen.y
       local offset
       if sprite.offset < 0 then offset = -1 else offset = 0 end

@@ -69,6 +69,17 @@ function addSCurves()
   addRoad(LENGTH.MEDIUM, LENGTH.MEDIUM, LENGTH.MEDIUM,  -CURVE.MEDIUM, -HILL.MEDIUM)
 end
 
+function addBumps()
+  addRoad(10, 10, 10, 0,  5);
+  addRoad(10, 10, 10, 0, -2);
+  addRoad(10, 10, 10, 0, -5);
+  addRoad(10, 10, 10, 0,  8);
+  addRoad(10, 10, 10, 0,  5);
+  addRoad(10, 10, 10, 0, -7);
+  addRoad(10, 10, 10, 0,  5);
+  addRoad(10, 10, 10, 0, -2);
+end
+
 function lastY()
   local length = table.getn(segments)
   if length == 0 then
@@ -100,6 +111,24 @@ function addSprite(n, sprite, offset)
   table.insert(segment.sprites, { source = sprite, offset = offset })
 end
 
+function resetSprites()
+  local n
+  local segLen = table.getn(segments)
+
+  for n = 1, segLen/ 20, 1 do
+    local choice = math.random()
+
+    if choice >= 0.6 and choice < 0.8 then
+      addSprite(n * 20,  billboard, -1)
+      addSprite(n * 20,  billboard, 1)
+    elseif choice >= 0.8 and choice < 0.9 then
+      addSprite(n * 20,  billboard, -1)
+    elseif choice >= 0.9 then
+      addSprite(n * 20,  billboard, 1)
+    end
+  end
+end
+
 function Road.reset()
   segments = {}
 
@@ -126,6 +155,7 @@ function Road.reset()
   end
 
   trackLength = length * segmentLength
+  resetSprites()
 end
 
 return Road
