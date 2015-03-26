@@ -17,7 +17,7 @@ function Cars.reset(sprite_scale)
     end
 
     z = math.floor(math.random() * segmentsLength) * segmentLength
-    selection = n % 4
+    selection = n % 5
     if selection == 0 then
       sprite = car1
     elseif selection == 1 then
@@ -26,6 +26,8 @@ function Cars.reset(sprite_scale)
       sprite = car3
     elseif selection == 3 then
       sprite = car4
+    elseif selection == 4 then
+      sprite = car5
     end
 
     speed  = maxSpeed / 4 + math.random() * maxSpeed / 2

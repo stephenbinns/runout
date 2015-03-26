@@ -39,6 +39,8 @@ function love.load()
   playerZ       = (cameraHeight * cameraDepth)
   centrifugal   = 0.35                     -- centrifugal force multiplier when going around curves
   resolution    = height/480
+  score = 0
+  timeleft = 60
 
 
   player = love.graphics.newImage('player.png')
@@ -46,6 +48,10 @@ function love.load()
   car2 = love.graphics.newImage('car2.png')
   car3 = love.graphics.newImage('car3.png')
   car4 = love.graphics.newImage('car4.png')
+  car5 = love.graphics.newImage('car5.png')
+  font = love.graphics.newFont('SDZERO_0.ttf', 48)
+  font_small = love.graphics.newFont('SDZERO_0.ttf', 18)
+
 
   billboard = love.graphics.newImage('billboard.png')
 
@@ -109,6 +115,8 @@ function love.update(dt)
 
   playerX = Util.limit(playerX, -2, 2)     -- dont ever let player go too far out of bounds
   speed   = Util.limit(speed, 0, maxSpeed) -- or exceed maxSpeed
+  score = score + (dt * 100)
+  timeleft = timeleft - dt
 end
 
 function love.keyreleased(key)
@@ -221,6 +229,16 @@ function love.draw()
     (height/2) - (cameraDepth/playerZ * Util.interpolate(playerSegment.p1.camera.y, playerSegment.p2.camera.y, playerPercent) * height/2),
     steer,
     playerSegment.p2.world.y - playerSegment.p1.world.y)
+  
+  love.graphics.setFont(font)
+  love.graphics.print(tostring(math.floor(score)), 10, 20)
+  love.graphics.print(tostring(math.floor(timeleft)), width / 2 - 30, 20)
+  love.graphics.print(tostring(math.floor(speed / 33)), width -100, 20)
+  
+  love.graphics.setFont(font_small)
+  love.graphics.print("Score", 10, 10)
+  love.graphics.print("Time", width / 2 - 25, 10)
+  love.graphics.print("Speed (mph)", width - 100, 10)
 end
 
 function findSegment(z)
