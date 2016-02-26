@@ -132,20 +132,72 @@ end
 function Road.reset()
   segments = {}
 
-  addStraight(LENGTH.SHORT/2)
-  addHill(LENGTH.SHORT, HILL.LOW)
-  addLowRollingHills()
-  addCurve(LENGTH.MEDIUM, CURVE.MEDIUM, HILL.LOW)
-  addLowRollingHills()
-  addCurve(LENGTH.LONG, CURVE.MEDIUM, HILL.MEDIUM)
-  addStraight()
-  addCurve(LENGTH.LONG, -CURVE.MEDIUM, HILL.MEDIUM)
-  addHill(LENGTH.LONG, HILL.HIGH)
-  addCurve(LENGTH.LONG, CURVE.MEDIUM, -HILL.LOW)
-  addHill(LENGTH.LONG, -HILL.MEDIUM)
-  addStraight()
+  addStraight(LENGTH.LONG)
+  
+  math.randomseed(os.time())
+  
+  for n = 1, 15 + lap, 1 do
+    local choice = math.random()
+    local hill = math.random()
+    local curve = math.random()
+    local length = math.random()
+    
+    local lengthChoice
+    if length < 0.3 then
+      lengthChoice = LENGTH.SHORT
+    elseif length < 0.8 then
+      lengthChoice =  LENGTH.MEDIUM
+    else 
+      lengthChoice = LENGTH.LONG
+    end
+    
+    local hillChoice
+    if hill < 0.15 then
+      hillChoice = HILL.LOW
+    elseif hill < 0.30 then
+      hillChoice = HILL.MEDIUM
+    elseif hill < 0.5 then
+      hillChoice = HILL.HIGH
+    elseif hill < 0.65 then
+      hillChoice = -HILL.LOW
+    elseif hill < 0.8 then
+      hillChoice = -HILL.MEDIUM
+    else
+      hillChoice = -HILL.HIGH
+    end
+      
+    local curveChoice
+    if curve < 0.15 then
+      curveChoice = CURVE.EASY
+    elseif curve < 0.30 then
+      curveChoice = CURVE.MEDIUM
+    elseif curve < 0.5 then
+      curveChoice = CURVE.HARD
+    elseif curve < 0.65 then
+      curveChoice = -CURVE.EASY
+    elseif curve < 0.8 then
+      curveChoice = -CURVE.MEDIUM
+    else
+      curveChoice = -CURVE.HARD
+    end
+      
+    if choice < 0.5 then
+      addCurve(lengthChoice, curveChoice, hillChoice)
+    elseif choice < 0.6 then
+      addHill(lengthChoice, hillChoice)
+    elseif choice < 0.7 then
+      addSCurves()
+    elseif choice < 0.8 then
+      addBumps()
+    elseif choice < 0.9 then
+      addStraight()
+    else
+      addLowRollingHills()
+    end
+  end
+  
   addDownhillToEnd()
-
+  
   segments[findSegment(playerZ).index + 1].color.road = Color.Start()
   segments[findSegment(playerZ).index + 2].color.road = Color.Start()
 

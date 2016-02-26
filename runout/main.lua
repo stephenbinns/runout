@@ -36,12 +36,12 @@ function love.load()
   offRoadDecel  = -maxSpeed/2             -- off road deceleration is somewhere in between
   offRoadLimit  =  maxSpeed/4             -- limit when off road deceleration no longer applies (e.g. you can always go at least this speed even when off road)
 
-  playerZ       = (cameraHeight * cameraDepth)
-  centrifugal   = 0.35                     -- centrifugal force multiplier when going around curves
+  playerZ = (cameraHeight * cameraDepth)
+  centrifugal   = 0.3                     -- centrifugal force multiplier when going around curves
   resolution    = height/480
   score = 0
-  timeleft = 60
-
+  timeleft = 99
+  lap = 1
 
   player = love.graphics.newImage('player.png')
   car1 = love.graphics.newImage('car1.png')
@@ -50,8 +50,8 @@ function love.load()
   car4 = love.graphics.newImage('car4.png')
   car5 = love.graphics.newImage('car5.png')
   font = love.graphics.newFont('SDZERO_0.ttf', 48)
+  font_large = love.graphics.newFont('SDZERO_0.ttf', 96)
   font_small = love.graphics.newFont('SDZERO_0.ttf', 18)
-
 
   billboard = love.graphics.newImage('billboard.png')
 
@@ -64,29 +64,77 @@ function love.load()
 
   Road.reset()
   Cars.reset(SPRITES.SCALE)
+
+  started = false
+  music = love.audio.newSource("music.mp3")
+  music:setLooping(true)
+  music:setVolume(0.7)
+  music:play()
+end
+
+function alert(text, time)
+  alerttime = time
+  alertText = text
+end
+
+function updateAlert(dt)
+  alerttime = (alerttime or 0)- dt
+end
+
+function drawAlert()
+  if alerttime > 0 then
+    love.graphics.setFont(font_large)
+    local len = #alertText 
+    love.graphics.print(alertText, (width / 2) - len * 20 , (height / 2) - 120)
+  end
 end
 
 function love.update(dt)
+
   if love.keyboard.isDown('left',  'a') then keyLeft   = true end
   if love.keyboard.isDown('right', 'd') then keyRight  = true end
-  if love.keyboard.isDown('up',    'w') then keyFaster = true end
+  if love.keyboard.isDown('up',    'w') then 
+    keyFaster = true
+    if not started then 
+      alert('GO', 2) 
+      started = true
+      timeleft = 99
+      score = 0
+    end
+  end
   if love.keyboard.isDown('down',  's') then keySlower = true end
 
   local playerSegment = findSegment(position+playerZ)
   local speedPercent  = speed/maxSpeed
   local dx            = dt * 2 * speedPercent -- at top speed, should be able to cross from left to right (-1 to 1) in 1 second
-
-  Cars.update(dt, playerSegment, playerW)
+  
+  local len = table.getn(segments)
+  if (math.floor((position + playerZ)/segmentLength) % len == 0) then
+    Road.reset()
+    playerZ = (cameraHeight * cameraDepth)
+    position = 0
+    alert('Checkpoint', 5)
+    timeleft = timeleft + 99
+    lap = lap + 1
+  end
+  
+  updateAlert(dt)
 
   position = Util.increase(position, dt * speed, trackLength)
+  
+  if not started then
+    return
+  end
 
+  Cars.update(dt, playerSegment, playerW)
+  
   if (keyLeft) then
     playerX = playerX - dx
   elseif (keyRight) then
     playerX = playerX + dx
   end
 
-  if (keyFaster) then
+  if (keyFaster and timeleft > 0) then
     speed = Util.accelerate(speed, accel, dt)
   elseif (keySlower) then
     speed = Util.accelerate(speed, breaking, dt)
@@ -101,7 +149,7 @@ function love.update(dt)
     speed = Util.accelerate(speed, offRoadDecel, dt)
   end
 
-  for n = 1, table.getn(playerSegment.cars), 1 do
+  for n = 1, #playerSegment.cars, 1 do
     car  = playerSegment.cars[n]
     carW = scaledPlayerW
     if (speed > car.speed) then
@@ -116,7 +164,12 @@ function love.update(dt)
   playerX = Util.limit(playerX, -2, 2)     -- dont ever let player go too far out of bounds
   speed   = Util.limit(speed, 0, maxSpeed) -- or exceed maxSpeed
   score = score + (dt * 100)
-  timeleft = timeleft - dt
+  if timeleft >= 0 then
+    timeleft = timeleft - dt
+  elseif speed <= 0 then
+    alert('Game over', 5)
+    started = false
+  end
 end
 
 function love.keyreleased(key)
@@ -146,7 +199,7 @@ function love.draw()
   local segmentsLength = table.getn(segments)
   local x = 0
   local dx = - (baseSegment.curve * basePercent)
-
+  
   Render.background(Color.Background())
 
   for n = 0, drawDistance, 1 do
@@ -191,8 +244,7 @@ function love.draw()
 
     -- render roadside sprites
     local i
-    local nsprites = table.getn(segment.sprites)
-    for i = 1, nsprites, 1 do
+    for i = 1, #segment.sprites, 1 do
       sprite      = segment.sprites[i]
       spriteScale = segment.p1.screen.scale
       spriteX     = segment.p1.screen.x + (spriteScale * sprite.offset * (roadWidth + 1500) * width/2)
@@ -201,19 +253,19 @@ function love.draw()
       if sprite.offset < 0 then offset = -1 else offset = 0 end
       Render.sprite(width, height, resolution, roadWidth, sprites, sprite.source, spriteScale, spriteX, spriteY, offset, -1, segment.clip)
     end
-
-    -- render other cars
-    local i
-    local ncars = table.getn(segment.cars)
-    for i = 1, ncars, 1 do
-      car         = segment.cars[i]
-      sprite      = car.sprite
-      spriteScale = Util.interpolate(segment.p1.screen.scale, segment.p2.screen.scale, car.percent)
-      spriteX     = Util.interpolate(segment.p1.screen.x,     segment.p2.screen.x,     car.percent) + (spriteScale * car.offset * roadWidth * width/2)
-      spriteY     = Util.interpolate(segment.p1.screen.y,     segment.p2.screen.y,     car.percent)
-      Render.sprite(width, height, resolution, roadWidth, sprites, car.sprite, spriteScale, spriteX, spriteY, -0.5, -1, segment.clip)
+    
+    if started then
+      -- render other cars
+      local i
+      for i = 1, #segment.cars, 1 do
+        car         = segment.cars[i]
+        sprite      = car.sprite
+        spriteScale = Util.interpolate(segment.p1.screen.scale, segment.p2.screen.scale, car.percent)
+        spriteX     = Util.interpolate(segment.p1.screen.x,     segment.p2.screen.x,     car.percent) + (spriteScale * car.offset * roadWidth * width/2)
+        spriteY     = Util.interpolate(segment.p1.screen.y,     segment.p2.screen.y,     car.percent)
+        Render.sprite(width, height, resolution, roadWidth, sprites, car.sprite, spriteScale, spriteX, spriteY, -0.5, -1, segment.clip)
+      end
     end
-
   end
 
   local steer = 0
@@ -237,8 +289,20 @@ function love.draw()
   
   love.graphics.setFont(font_small)
   love.graphics.print("Score", 10, 10)
-  love.graphics.print("Time", width / 2 - 25, 10)
+  love.graphics.print("Time", width / 2 - 22, 10)
   love.graphics.print("Speed (mph)", width - 100, 10)
+  
+  if not started then
+    love.graphics.setFont(font_large)
+    love.graphics.print("F-OutZero", width / 2 - 200, 100)
+    love.graphics.setFont(font)
+    love.graphics.print("Handmadebymogwai - 2015", width / 2 - 250, 200)
+    love.graphics.print("Controls", width / 2 - 100, 250)
+    love.graphics.print("Arrow keys / WASD - Drive", width / 2 - 250, 300)
+  else
+    drawAlert()
+  end
+
 end
 
 function findSegment(z)
